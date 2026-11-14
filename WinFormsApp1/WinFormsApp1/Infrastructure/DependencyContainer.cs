@@ -10,12 +10,10 @@ namespace ElectronicsStore.Infrastructure
         {
             var services = new ServiceCollection();
 
-            // Регистрируем зависимости (Интерфейс -> Заглушка)
+            // Регистрируем зависимости (Интерфейсы -> Заглушки)
             services.AddSingleton<IProductRepository, InMemoryProductRepository>();
             services.AddSingleton<ICustomerRepository, InMemoryCustomerRepository>();
             services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
-
-            // Позже здесь мы зарегистрируем наши формы
 
             return services.BuildServiceProvider();
         }
