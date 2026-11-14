@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using ElectronicsStore.Entities;
+using ElectronicsStore.Interfaces;
 
 namespace ElectronicsStore.Repositories
 {

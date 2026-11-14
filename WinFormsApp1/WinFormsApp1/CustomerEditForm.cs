@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using ElectronicsStore.Entities;
-using ElectronicsStore.Repositories;
+using ElectronicsStore.Interfaces;
 
 namespace ElectronicsStore
 {

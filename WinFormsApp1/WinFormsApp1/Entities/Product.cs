@@ -9,7 +9,7 @@ namespace ElectronicsStore.Entities
         public string Name { get; private set; }
         public decimal Price { get; private set; }
         public int StockQuantity { get; private set; }
-        public ProductCategory Category { get; private set; } // Используем перечисление
+        public ProductCategory Category { get; private set; }
 
         private Product(int id, string name, decimal price, int stockQuantity, ProductCategory category)
         {

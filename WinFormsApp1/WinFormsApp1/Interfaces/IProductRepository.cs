@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using ElectronicsStore.Entities;
 
-namespace ElectronicsStore.Repositories
+namespace ElectronicsStore.Interfaces
 {
     public interface IProductRepository
     {

@@ -2,8 +2,8 @@
 using System.Windows.Forms;
 using System.Linq;
 using ElectronicsStore.Entities;
-using ElectronicsStore.Repositories;
 using ElectronicsStore.Enums;
+using ElectronicsStore.Interfaces;
 
 namespace ElectronicsStore
 {

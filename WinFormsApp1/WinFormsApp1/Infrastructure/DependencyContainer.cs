@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using ElectronicsStore.Repositories;
+using ElectronicsStore.Interfaces;
 
 namespace ElectronicsStore.Infrastructure
 {
@@ -10,7 +11,6 @@ namespace ElectronicsStore.Infrastructure
         {
             var services = new ServiceCollection();
 
-            // Регистрируем зависимости (Интерфейсы -> Заглушки)
             services.AddSingleton<IProductRepository, InMemoryProductRepository>();
             services.AddSingleton<ICustomerRepository, InMemoryCustomerRepository>();
             services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
