@@ -2,38 +2,38 @@
 {
     partial class CustomerEditForm
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
+        protected override void Dispose(bool disposing) { if (disposing && (components != null)) components.Dispose(); base.Dispose(disposing); }
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        #region Windows Form Designer generated code
-
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "CustomerEditForm";
+            this.lblName = new System.Windows.Forms.Label();
+            this._txtName = new System.Windows.Forms.TextBox();
+            this.lblPhone = new System.Windows.Forms.Label();
+            this._txtPhone = new System.Windows.Forms.TextBox();
+            this.btnSave = new System.Windows.Forms.Button();
+
+            this.lblName.Text = "ФИО:"; this.lblName.Location = new System.Drawing.Point(20, 20); this.lblName.Width = 100;
+            this._txtName.Location = new System.Drawing.Point(130, 20); this._txtName.Width = 200;
+
+            this.lblPhone.Text = "Телефон:"; this.lblPhone.Location = new System.Drawing.Point(20, 60); this.lblPhone.Width = 100;
+            this._txtPhone.Location = new System.Drawing.Point(130, 60); this._txtPhone.Width = 200;
+
+            this.btnSave.Text = "Сохранить"; this.btnSave.Location = new System.Drawing.Point(130, 110); this.btnSave.Width = 100;
+            this.btnSave.Click += new System.EventHandler(this.BtnSave_Click);
+
+            this.Controls.Add(this.lblName); this.Controls.Add(this._txtName);
+            this.Controls.Add(this.lblPhone); this.Controls.Add(this._txtPhone);
+            this.Controls.Add(this.btnSave);
+
+            this.ClientSize = new System.Drawing.Size(380, 180);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Text = "Клиент";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
         }
 
-        #endregion
+        private System.Windows.Forms.Label lblName, lblPhone;
+        private System.Windows.Forms.TextBox _txtName, _txtPhone;
+        private System.Windows.Forms.Button btnSave;
     }
 }
