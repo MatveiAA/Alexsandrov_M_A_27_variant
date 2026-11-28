@@ -57,9 +57,10 @@ public sealed class OrderRepository(IDbContextFactory<DataContext> factory, ILog
                 product.RemoveFromStock((int)quantity);
             }
 
+           
             var saved = order.PrepareForCheckout(customer, products);
             db.Orders.Add(saved);
-            db.SaveChanges();
+            db.SaveChanges(); 
             transaction.Commit();
             order.CompleteCheckout(saved);
             logger.LogInformation("Оформлен заказ {OrderId} для клиента {CustomerId}, сумма {Total}",
