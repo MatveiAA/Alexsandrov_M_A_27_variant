@@ -63,7 +63,6 @@ public sealed class CustomerRepository(IDbContextFactory<DataContext> factory, I
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
             { SqlState: PostgresErrorCodes.ForeignKeyViolation, ConstraintName: "FK_Orders_Customers_CustomerId" })
         {
-            // The foreign key also protects against orders added concurrently.
             db.Entry(entity).State = EntityState.Unchanged;
             entity.Archive();
             var count = db.SaveChanges();

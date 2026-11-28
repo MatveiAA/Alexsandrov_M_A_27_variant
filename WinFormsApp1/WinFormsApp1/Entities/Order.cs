@@ -72,7 +72,6 @@ public class Order
 
     internal void TransitionTo(OrderStatus next)
     {
-        // UTC timestamps must remain chronologically ordered even if the system clock was adjusted.
         switch (Status, next)
         {
             case (OrderStatus.Processing, OrderStatus.Shipped):

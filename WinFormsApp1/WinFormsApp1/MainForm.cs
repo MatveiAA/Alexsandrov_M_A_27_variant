@@ -29,7 +29,6 @@ public partial class MainForm : Form
         if (_services is null) return;
         StoreUi.Run(this, () =>
         {
-            // ActivatorUtilities does not retain disposed modal forms in the root container.
             using var form = ActivatorUtilities.CreateInstance<T>(_services);
             form.ShowDialog(this);
         });

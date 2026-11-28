@@ -36,7 +36,7 @@ public sealed class DataContext(DbContextOptions<DataContext> options) : DbConte
                 table.HasCheckConstraint("CK_Products_StockQuantity", "\"StockQuantity\" >= 0");
             });
             product.HasIndex(p => new { p.IsArchived, p.Name });
-            product.Property<uint>("Version").IsRowVersion(); // PostgreSQL xmin
+            product.Property<uint>("Version").IsRowVersion();
         });
 
         model.Entity<Customer>(customer =>

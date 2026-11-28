@@ -39,7 +39,6 @@ public sealed class OrderRepository(IDbContextFactory<DataContext> factory, ILog
                 .ToDictionary(group => group.Key, group => group.Sum(item => (long)item.Quantity));
             using var transaction = db.Database.BeginTransaction();
 
-            // Block concurrent updates to this customer until checkout finishes. Include xmin for EF tracking.
             var customer = db.Customers.FromSqlInterpolated($"""
                 SELECT c.*, c.xmin FROM "Customers" AS c
                 WHERE c."Id" = {order.CustomerId} AND NOT c."IsArchived"
@@ -58,10 +57,9 @@ public sealed class OrderRepository(IDbContextFactory<DataContext> factory, ILog
                 product.RemoveFromStock((int)quantity);
             }
 
-            // A separate instance keeps the caller's draft usable if stock changes or the insert fails.
             var saved = order.PrepareForCheckout(customer, products);
             db.Orders.Add(saved);
-            db.SaveChanges(); // xmin prevents simultaneous checkouts from overwriting each other's stock.
+            db.SaveChanges();
             transaction.Commit();
             order.CompleteCheckout(saved);
             logger.LogInformation("Оформлен заказ {OrderId} для клиента {CustomerId}, сумма {Total}",
