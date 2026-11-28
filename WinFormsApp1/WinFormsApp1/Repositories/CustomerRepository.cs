@@ -2,6 +2,7 @@ using ElectronicsStore.Data;
 using ElectronicsStore.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace ElectronicsStore.Repositories;
 
@@ -51,10 +52,24 @@ public sealed class CustomerRepository(IDbContextFactory<DataContext> factory, I
 
     public void Delete(int id) => Execute(nameof(Delete), id, db =>
     {
-        FindActive(db, id).Archive();
-        var count = db.SaveChanges();
-        logger.LogInformation("Клиент {CustomerId} перемещён в архив", id);
-        return count;
+        var entity = FindActive(db, id);
+        db.Customers.Remove(entity);
+        try
+        {
+            var count = db.SaveChanges();
+            logger.LogInformation("Клиент {CustomerId} удалён из базы", id);
+            return count;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.ForeignKeyViolation, ConstraintName: "FK_Orders_Customers_CustomerId" })
+        {
+            // The foreign key also protects against orders added concurrently.
+            db.Entry(entity).State = EntityState.Unchanged;
+            entity.Archive();
+            var count = db.SaveChanges();
+            logger.LogInformation("Клиент {CustomerId} перемещён в архив", id);
+            return count;
+        }
     });
 
     private static Customer FindActive(DataContext db, int id) =>

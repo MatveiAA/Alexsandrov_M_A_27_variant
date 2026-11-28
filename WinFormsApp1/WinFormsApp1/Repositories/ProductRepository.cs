@@ -2,6 +2,7 @@ using ElectronicsStore.Data;
 using ElectronicsStore.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace ElectronicsStore.Repositories;
 
@@ -58,10 +59,24 @@ public sealed class ProductRepository(IDbContextFactory<DataContext> factory, IL
 
     public void Delete(int id) => Execute(nameof(Delete), id, db =>
     {
-        FindActive(db, id).Archive();
-        var count = db.SaveChanges();
-        logger.LogInformation("Товар {ProductId} перемещён в архив", id);
-        return count;
+        var entity = FindActive(db, id);
+        db.Products.Remove(entity);
+        try
+        {
+            var count = db.SaveChanges();
+            logger.LogInformation("Товар {ProductId} удалён из базы", id);
+            return count;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.ForeignKeyViolation, ConstraintName: "FK_OrderItems_Products_ProductId" })
+        {
+            // The foreign key also protects against orders added concurrently.
+            db.Entry(entity).State = EntityState.Unchanged;
+            entity.Archive();
+            var count = db.SaveChanges();
+            logger.LogInformation("Товар {ProductId} перемещён в архив", id);
+            return count;
+        }
     });
 
     private static Product FindActive(DataContext db, int id) =>
