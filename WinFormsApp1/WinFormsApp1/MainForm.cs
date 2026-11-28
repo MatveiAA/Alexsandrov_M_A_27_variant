@@ -1,58 +1,37 @@
-using System;
-using System.Windows.Forms;
-using ElectronicsStore.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace ElectronicsStore
+namespace ElectronicsStore;
+
+public partial class MainForm : Form
 {
-    public partial class MainForm : Form
+    private readonly IServiceProvider? _services;
+
+    public MainForm()
     {
-        public MainForm()
+        InitializeComponent();
+        Text = "РњР°РіР°Р·РёРЅ СЌР»РµРєС‚СЂРѕРЅРёРєРё";
+        StartPosition = FormStartPosition.CenterScreen;
+        var menu = new MenuStrip();
+        var directories = new ToolStripMenuItem("РЎРїСЂР°РІРѕС‡РЅРёРєРё");
+        directories.DropDownItems.Add("РўРѕРІР°СЂС‹", null, (_, _) => ShowForm<ProductListForm>());
+        directories.DropDownItems.Add("РљР»РёРµРЅС‚С‹", null, (_, _) => ShowForm<CustomerListForm>());
+        var operations = new ToolStripMenuItem("РћРїРµСЂР°С†РёРё");
+        operations.DropDownItems.Add("Р—Р°РєР°Р·С‹", null, (_, _) => ShowForm<OrderListForm>());
+        menu.Items.AddRange([directories, operations]);
+        MainMenuStrip = menu;
+        Controls.Add(menu);
+    }
+
+    public MainForm(IServiceProvider services) : this() => _services = services;
+
+    private void ShowForm<T>() where T : Form
+    {
+        if (_services is null) return;
+        StoreUi.Run(this, () =>
         {
-            // Убрали InitializeComponent(), так как файл дизайнера мы удалили
-            SetupMenu();
-        }
-
-        private void SetupMenu()
-        {
-            this.Text = "Главное меню - Магазин электроники";
-            this.Size = new System.Drawing.Size(800, 600);
-
-            MenuStrip mainMenu = new MenuStrip();
-            ToolStripMenuItem directoriesMenu = new ToolStripMenuItem("Справочники");
-
-            ToolStripMenuItem productsItem = new ToolStripMenuItem("Товары");
-            productsItem.Click += (s, e) => {
-                var repo = Program.ServiceProvider.GetService(typeof(IProductRepository)) as IProductRepository;
-                new ProductListForm(repo).ShowDialog();
-            };
-
-            ToolStripMenuItem customersItem = new ToolStripMenuItem("Клиенты");
-            customersItem.Click += (s, e) => {
-                var repo = Program.ServiceProvider.GetService(typeof(ICustomerRepository)) as ICustomerRepository;
-                new CustomerListForm(repo).ShowDialog();
-            };
-
-            directoriesMenu.DropDownItems.Add(productsItem);
-            directoriesMenu.DropDownItems.Add(customersItem);
-
-            ToolStripMenuItem operationsMenu = new ToolStripMenuItem("Операции");
-            ToolStripMenuItem ordersItem = new ToolStripMenuItem("Заказы");
-            ordersItem.Click += (s, e) => {
-                var oRepo = Program.ServiceProvider.GetService(typeof(IOrderRepository)) as IOrderRepository;
-                var pRepo = Program.ServiceProvider.GetService(typeof(IProductRepository)) as IProductRepository;
-                var cRepo = Program.ServiceProvider.GetService(typeof(ICustomerRepository)) as ICustomerRepository;
-                new OrderListForm(oRepo, pRepo, cRepo).ShowDialog();
-            };
-            operationsMenu.DropDownItems.Add(ordersItem);
-
-            ToolStripMenuItem reportsMenu = new ToolStripMenuItem("Отчеты");
-
-            mainMenu.Items.Add(directoriesMenu);
-            mainMenu.Items.Add(operationsMenu);
-            mainMenu.Items.Add(reportsMenu);
-
-            this.MainMenuStrip = mainMenu;
-            this.Controls.Add(mainMenu);
-        }
+            // ActivatorUtilities does not retain disposed modal forms in the root container.
+            using var form = ActivatorUtilities.CreateInstance<T>(_services);
+            form.ShowDialog(this);
+        });
     }
 }

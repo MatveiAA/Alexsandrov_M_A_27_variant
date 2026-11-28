@@ -1,21 +1,26 @@
-﻿using System;
-using Microsoft.Extensions.DependencyInjection;
+using ElectronicsStore.Data;
 using ElectronicsStore.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
-namespace ElectronicsStore.Infrastructure
+namespace ElectronicsStore.Infrastructure;
+
+public static class DependencyContainer
 {
-    public static class DependencyContainer
+    public static ServiceProvider Configure(Serilog.ILogger logger)
     {
-        public static IServiceProvider Configure()
-        {
-            var services = new ServiceCollection();
-
-            // Регистрируем зависимости (Интерфейсы -> Заглушки)
-            services.AddSingleton<IProductRepository, InMemoryProductRepository>();
-            services.AddSingleton<ICustomerRepository, InMemoryCustomerRepository>();
-            services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
-
-            return services.BuildServiceProvider();
-        }
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.ClearProviders().AddSerilog(logger));
+        services.AddDbContextFactory<DataContext>();
+        services.AddTransient<IProductRepository, ProductRepository>();
+        services.AddTransient<ICustomerRepository, CustomerRepository>();
+        services.AddTransient<IOrderRepository, OrderRepository>();
+        services.AddTransient<MainForm>();
+        services.AddTransient<ProductListForm>();
+        services.AddTransient<CustomerListForm>();
+        services.AddTransient<OrderListForm>();
+        return services.BuildServiceProvider(validateScopes: true);
     }
 }

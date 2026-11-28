@@ -1,54 +1,40 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Forms;
 using ElectronicsStore.Entities;
 using ElectronicsStore.Repositories;
 
-namespace ElectronicsStore
+namespace ElectronicsStore;
+
+public partial class ProductListForm : Form
 {
-    public partial class ProductListForm : Form
+    public ProductListForm(IProductRepository repository)
     {
-        private readonly IProductRepository _repository;
-        private DataGridView _grid;
-
-        public ProductListForm(IProductRepository repository)
+        InitializeComponent();
+        Text = "Каталог товаров";
+        StartPosition = FormStartPosition.CenterParent;
+        ClientSize = new Size(840, 460);
+        var grid = new StoreGrid<Product>(("№", p => p.Id), ("Модель", p => p.Name),
+            ("Категория", p => StoreUi.Name(p.Category)), ("Характеристики", p => p.Specifications),
+            ("Цена, руб.", p => p.Price.ToString("N2")), ("Остаток, шт.", p => p.StockQuantity));
+        grid.Columns[3].FillWeight = 200;
+        void RefreshGrid() => grid.SetItems(repository.GetAll());
+        void Edit(Product? product) => StoreUi.Run(this, () =>
         {
-            InitializeComponent();
-            _repository = repository;
-            SetupForm();
-            LoadData();
-        }
-
-        private void SetupForm()
-        {
-            this.Text = "Список товаров";
-            this.Size = new System.Drawing.Size(800, 500);
-
-            _grid = new DataGridView { Dock = DockStyle.Fill, ReadOnly = true, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false };
-            this.Controls.Add(_grid);
-
-            var panel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 50 };
-            var btnAdd = new Button { Text = "Добавить", Width = 100 };
-            btnAdd.Click += (s, e) => { using (var form = new ProductEditForm(_repository)) { if (form.ShowDialog() == DialogResult.OK) LoadData(); } };
-
-            var btnEdit = new Button { Text = "Изменить", Width = 100 };
-            btnEdit.Click += (s, e) => {
-                if (_grid.SelectedRows.Count == 0) return;
-                var prod = (Product)_grid.SelectedRows[0].DataBoundItem;
-                using (var form = new ProductEditForm(_repository, prod)) { if (form.ShowDialog() == DialogResult.OK) LoadData(); }
-            };
-
-            var btnDelete = new Button { Text = "Удалить", Width = 100 };
-            btnDelete.Click += (s, e) => {
-                if (_grid.SelectedRows.Count == 0) return;
-                var prod = (Product)_grid.SelectedRows[0].DataBoundItem;
-                if (MessageBox.Show($"Удалить {prod.Name}?", "Вопрос", MessageBoxButtons.YesNo) == DialogResult.Yes) { _repository.Delete(prod.Id); LoadData(); }
-            };
-
-            panel.Controls.Add(btnAdd); panel.Controls.Add(btnEdit); panel.Controls.Add(btnDelete);
-            this.Controls.Add(panel);
-        }
-
-        private void LoadData() => _grid.DataSource = _repository.GetAll().ToList();
+            using var dialog = new ProductEditForm(repository, product);
+            if (dialog.ShowDialog(this) == DialogResult.OK) RefreshGrid();
+        });
+        var toolbar = StoreGrid<Product>.Toolbar();
+        toolbar.Controls.AddRange([
+            StoreGrid<Product>.Action("Добавить", (_, _) => Edit(null)),
+            StoreGrid<Product>.Action("Изменить", (_, _) => { if (grid.SelectedItem is { } product) Edit(product); }),
+            StoreGrid<Product>.Action("Удалить", (_, _) => StoreUi.Run(this, () =>
+            {
+                if (grid.SelectedItem is not { } product || MessageBox.Show(this, $"Удалить товар «{product.Name}» из каталога?",
+                        Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                repository.Delete(product.Id);
+                RefreshGrid();
+            }))
+        ]);
+        Controls.Add(grid);
+        Controls.Add(toolbar);
+        Shown += (_, _) => StoreUi.Run(this, RefreshGrid);
     }
 }

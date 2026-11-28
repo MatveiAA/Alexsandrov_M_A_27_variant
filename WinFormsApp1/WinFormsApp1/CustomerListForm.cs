@@ -1,47 +1,37 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Forms;
 using ElectronicsStore.Entities;
 using ElectronicsStore.Repositories;
 
-namespace ElectronicsStore
+namespace ElectronicsStore;
+
+public partial class CustomerListForm : Form
 {
-    public partial class CustomerListForm : Form
+    public CustomerListForm(ICustomerRepository repository)
     {
-        private readonly ICustomerRepository _repository;
-        private DataGridView _grid;
-
-        public CustomerListForm(ICustomerRepository repository) { InitializeComponent(); _repository = repository; SetupForm(); LoadData(); }
-
-        private void SetupForm()
+        InitializeComponent();
+        Text = "Клиенты";
+        StartPosition = FormStartPosition.CenterParent;
+        ClientSize = new Size(640, 400);
+        var grid = new StoreGrid<Customer>(("№", c => c.Id), ("ФИО", c => c.FullName), ("Телефон", c => c.Phone));
+        void RefreshGrid() => grid.SetItems(repository.GetAll());
+        void Edit(Customer? customer) => StoreUi.Run(this, () =>
         {
-            this.Text = "Список клиентов";
-            this.Size = new System.Drawing.Size(600, 400);
-
-            _grid = new DataGridView { Dock = DockStyle.Fill, ReadOnly = true, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false };
-            this.Controls.Add(_grid);
-
-            var panel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 50 };
-            var btnAdd = new Button { Text = "Добавить", Width = 100 };
-            btnAdd.Click += (s, e) => { using (var form = new CustomerEditForm(_repository)) { if (form.ShowDialog() == DialogResult.OK) LoadData(); } };
-
-            var btnEdit = new Button { Text = "Изменить", Width = 100 };
-            btnEdit.Click += (s, e) => {
-                if (_grid.SelectedRows.Count == 0) return;
-                var cust = (Customer)_grid.SelectedRows[0].DataBoundItem;
-                using (var form = new CustomerEditForm(_repository, cust)) { if (form.ShowDialog() == DialogResult.OK) LoadData(); }
-            };
-
-            var btnDelete = new Button { Text = "Удалить", Width = 100 };
-            btnDelete.Click += (s, e) => {
-                if (_grid.SelectedRows.Count == 0) return;
-                var cust = (Customer)_grid.SelectedRows[0].DataBoundItem;
-                if (MessageBox.Show($"Удалить {cust.FullName}?", "Вопрос", MessageBoxButtons.YesNo) == DialogResult.Yes) { _repository.Delete(cust.Id); LoadData(); }
-            };
-
-            panel.Controls.Add(btnAdd); panel.Controls.Add(btnEdit); panel.Controls.Add(btnDelete);
-            this.Controls.Add(panel);
-        }
-        private void LoadData() => _grid.DataSource = _repository.GetAll().ToList();
+            using var dialog = new CustomerEditForm(repository, customer);
+            if (dialog.ShowDialog(this) == DialogResult.OK) RefreshGrid();
+        });
+        var toolbar = StoreGrid<Customer>.Toolbar();
+        toolbar.Controls.AddRange([
+            StoreGrid<Customer>.Action("Добавить", (_, _) => Edit(null)),
+            StoreGrid<Customer>.Action("Изменить", (_, _) => { if (grid.SelectedItem is { } customer) Edit(customer); }),
+            StoreGrid<Customer>.Action("Удалить", (_, _) => StoreUi.Run(this, () =>
+            {
+                if (grid.SelectedItem is not { } customer || MessageBox.Show(this, $"Удалить клиента «{customer.FullName}» из справочника?",
+                        Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                repository.Delete(customer.Id);
+                RefreshGrid();
+            }))
+        ]);
+        Controls.Add(grid);
+        Controls.Add(toolbar);
+        Shown += (_, _) => StoreUi.Run(this, RefreshGrid);
     }
 }

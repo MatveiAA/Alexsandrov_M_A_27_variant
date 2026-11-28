@@ -1,25 +1,44 @@
-using System;
-using System.Windows.Forms;
+using ElectronicsStore.Data;
 using ElectronicsStore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
-namespace ElectronicsStore
+namespace ElectronicsStore;
+
+internal static class Program
 {
-    internal static class Program
+    [STAThread]
+    private static void Main()
     {
-        // Создаем статическое свойство, чтобы формы имели доступ к контейнеру
-        public static IServiceProvider ServiceProvider { get; private set; }
-
-        [STAThread]
-        static void Main()
+        ApplicationConfiguration.Initialize();
+        try
         {
-            ApplicationConfiguration.Initialize();
-
-            // Инициализируем наш IoC-контейнер
-            ServiceProvider = DependencyContainer.Configure();
-
-            // Запускаем главную форму
-            Application.Run(new MainForm());
+            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ElectronicsStore", "Logs", "store-.log");
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false)
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["Serilog:WriteTo:0:Args:path"] = logPath })
+                .Build();
+            Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
+            using var services = DependencyContainer.Configure(Log.Logger);
+            using (var context = services.GetRequiredService<IDbContextFactory<DataContext>>().CreateDbContext())
+                context.Database.Migrate();
+            using var form = services.GetRequiredService<MainForm>();
+            Application.Run(form);
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ РїСЂРёР»РѕР¶РµРЅРёРµ");
+            MessageBox.Show("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ РјР°РіР°Р·РёРЅ. РџСЂРѕРІРµСЂСЊС‚Рµ РЅР°СЃС‚СЂРѕР№РєРё PostgreSQL Рё РїРµСЂРµРјРµРЅРЅСѓСЋ " +
+                "ELECTRONICS_STORE_CONNECTION. РџРѕРґСЂРѕР±РЅРѕСЃС‚Рё: %LOCALAPPDATA%\\ElectronicsStore\\Logs.",
+                "РњР°РіР°Р·РёРЅ СЌР»РµРєС‚СЂРѕРЅРёРєРё", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            Log.CloseAndFlush();
         }
     }
 }
